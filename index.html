@@ -182,7 +182,7 @@ const shuffle=(a,r)=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1)
 const SEED_LIST='';
 function seed(){
   return {v:2,phase:'setup',tab:'san',courts:[{s:'20:00',e:'22:00'},{s:'21:00',e:'22:00'}],pts1:15,dur1:12,pts2:21,dur2:16,
-    listText:SEED_LIST,absent:[],showLv:false,players:[],done:[],live:[],plan:[],extra:0,seq:0};
+    listText:SEED_LIST,absent:[],showLv:false,mixN:3,players:[],done:[],live:[],plan:[],extra:0,seq:0};
 }
 function load(){try{const r=localStorage.getItem(KEY);if(r){const s=JSON.parse(r);if(s&&s.v===2)return s;}}catch(e){}return null;}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
@@ -223,6 +223,7 @@ function applyMatch(st,pair,opp,q,t,end,skip){
 }
 const eligible=(st,id)=>{const s=st[id],p=P(id);return s.rested||s.streak<CAP(p.lv);};
 const fem=(a,b)=>(a.g==='F')+(b.g==='F');
+const singleG=q=>{const g=P(q[0])&&P(q[0]).g;return g&&q.every(id=>P(id)&&P(id).g===g)?g:'';};
 function mCost(q,ctx){
   const [a,b,c,d]=q.map(P);let x=0;
   const df=(LV[a.lv]+LV[b.lv])-(LV[c.lv]+LV[d.lv]);x+=df*df*W.diff;
@@ -240,7 +241,7 @@ function typeLabel(q){
 }
 
 /* ---------- Chọn 4k người và chia cặp cho k sân cùng lúc ---------- */
-function solve(k,pool,ctx,seedN){
+function solve(k,pool,ctx,seedN,want){
   const r=rngFrom(seedN);
   const need=4*k;if(pool.length<need)return null;
   const info=pool.map(id=>({id,el:eligible(ctx.st,id),pr:ctx.st[id].games,since:ctx.st[id].since}))
@@ -252,7 +253,7 @@ function solve(k,pool,ctx,seedN){
   const rank={};tie.forEach((id,i)=>rank[id]=i);
   const over=new Set(info.filter(x=>!x.el).map(x=>x.id));
   const again=new Set(info.filter(x=>!ctx.st[x.id].rested).map(x=>x.id));
-  const cost=arr=>{let x=0;for(let m=0;m<k;m++)x+=mCost(arr.slice(4*m,4*m+4),ctx);for(const id of arr){if(id in rank)x+=rank[id]*3;if(over.has(id))x+=W.overCap;if(again.has(id))x+=W.again;}return x;};
+  const cost=arr=>{let x=0;for(let m=0;m<k;m++){const q=arr.slice(4*m,4*m+4);x+=mCost(q,ctx);if(want&&want[m]){const g0=singleG(q);if(!g0)x+=80;else if(g0!==want[m])x+=5;}}for(const id of arr){if(id in rank)x+=rank[id]*3;if(over.has(id))x+=W.overCap;if(again.has(id))x+=W.again;}return x;};
   let best=null,bc=Infinity;
   const R=k===1?70:140;
   for(let rr=0;rr<R;rr++){
@@ -303,9 +304,17 @@ function replan(){
     const freeSlots=slots.filter(s=>!s.m);
     if(freeSlots.length){
       const pool=present.filter(id=>st[id].busy<=t+1&&!used.has(id));
+      // Tự xen kẽ: cứ mixN trận có 1 trận chỉ nam hoặc chỉ nữ (lần lượt nam, nữ); xếp chung với các sân khác cùng lúc
+      const mixN=S.mixN??3;
+      const hist=[...S.done.slice().sort((a,b)=>a.start-b.start),...S.live.slice().sort((a,b)=>a.start-b.start),...out];
+      let gap=0,lastG='F';for(const m of hist){const g=singleG(m.q);if(g){gap=0;lastG=g;}else gap++;}
+      const want=[];slots.forEach(s=>{if(s.m){const g=singleG(s.m.q);if(g){gap=0;lastG=g;}else gap++;return;}
+        if(mixN>0&&gap>=mixN-1){want.push(lastG==='M'?'F':'M');gap=0;lastG=lastG==='M'?'F':'M';}else{want.push('');gap++;}});
       const k=Math.min(freeSlots.length,Math.floor(pool.length/4));
-      const arr=k?solve(k,pool,ctx,9173+out.length*31):null;
-      freeSlots.forEach((s,j)=>{if(arr&&j<k)s.m={id:uid(),q:arr.slice(4*j,4*j+4),pin:false};});
+      const arr=k?solve(k,pool,ctx,9173+out.length*31,want):null;
+      freeSlots.forEach((s,j)=>{if(arr&&j<k){const q=arr.slice(4*j,4*j+4);const gs=new Set(q.map(id=>P(id).g));
+        const one=gs.size===1&&!gs.has('')?[...gs][0]:'';
+        s.m={id:uid(),q,pin:false,ins:want[j]&&one?(one==='M'?'đôi nam':'đôi nữ'):'',auto:true};}});
     }
     let placed=0;
     const grpIds=new Set(slots.flatMap(s=>s.m?s.m.q:[]));
@@ -321,7 +330,7 @@ function replan(){
           else if(!x.rested&&x.streak>=CAP(p.lv))warn.push(`${p.name}: ${x.streak+1} trận liền`);});
       }
       applyMatch(st,ctx.pair,ctx.opp,q,t0,t0+d,grpIds);
-      out.push({id:s.m.id,q:q.slice(),pin:!!s.m.pin,ins:s.m.ins||'',t:t0,c:s.c.i,x:isX,warn});
+      out.push({id:s.m.id,q:q.slice(),pin:!!s.m.pin,ins:s.m.ins||'',auto:!!s.m.auto,t:t0,c:s.c.i,x:isX,warn});
       s.c.free=t0+d;placed++;if(isX)extraLeft--;
     });
     if(!placed&&courts.every(c=>c.free===Infinity))break;
@@ -418,8 +427,9 @@ function vSetup(){
   <section class="card"><h2>Luật điểm</h2>
     <div class="frow"><span>Khi 1 sân:</span><input type="number" id="pts1" data-num="pts1" min="5" max="31" value="${S.pts1}"> điểm ≈ <input type="number" id="dur1" data-num="dur1" min="4" max="40" value="${S.dur1}"> phút</div>
     <div class="frow"><span>Khi 2 sân trở lên:</span><input type="number" id="pts2" data-num="pts2" min="5" max="31" value="${S.pts2}"> điểm ≈ <input type="number" id="dur2" data-num="dur2" min="4" max="40" value="${S.dur2}"> phút</div>
+    <div class="frow"><span>Tự xen đôi nam / đôi nữ: tối đa</span><input type="number" id="mixN" data-num="mixN" min="0" max="10" value="${S.mixN??3}"> trận có 1 trận <span class="note">(0 = tắt)</span></div>
     <label class="check"><input type="checkbox" id="showLv" data-flag="showLv" ${S.showLv?'checked':''}> Hiện trình độ trên màn hình</label>
-    <p class="note">Số phút dùng để đoán giờ trong lịch. Lịch tự chỉnh theo giờ bấm “Xong trận” thật. Trận chèn thêm có thể đẩy trận cuối ra ngoài giờ, khi đó bấm “+ Tạo thêm 1 lượt”.</p></section>`;
+    <p class="note">Số phút dùng để đoán giờ trong lịch. Lịch tự chỉnh theo giờ bấm “Xong trận” thật. </p></section>`;
   if(!run){
     h+=`<section class="card"><h2>Danh sách</h2>
       <p class="note">Mỗi dòng: <b>số. Tên-giới-trình</b>, ví dụ “2. Minh-nam-C”. Trình A (mạnh nhất) đến E.</p>
@@ -469,7 +479,6 @@ function vSan(){
   h+='</section>';
   const nxt=S.plan.slice(0,2);
   h+=`<section><h2>Vào tiếp</h2>${nxt.length?`<div class="mlist">${nxt.map(m=>mrow(m,'plan')).join('')}</div>`:`<p class="note">Hết lịch. Còn giờ thì tạo thêm ở đây.</p>`}
-    <div class="row"><button class="btn" data-act="ins" data-v="M">+ Chèn đôi nam</button><button class="btn" data-act="ins" data-v="F">+ Chèn đôi nữ</button></div>
     <div><button class="btn" data-act="extra">+ Tạo thêm 1 lượt</button></div></section>`;
   const ctx=baseStats(now);
   const liveIds=new Set(S.live.flatMap(m=>m.q));
@@ -482,7 +491,7 @@ function mrow(m,kind){
   const tl=typeLabel(m.q);
   const meta=kind==='done'
     ?`<b>Sân ${m.c+1}</b> · ${fmt(m.start)}–${fmt(m.end)}`
-    :`<b>~${fmt(m.t)}</b> · Sân ${m.c+1} · ${ptsAt(m.t)} điểm${m.x?' · lượt thêm':''}${m.ins?' · chèn '+m.ins:''}`;
+    :`<b>~${fmt(m.t)}</b> · Sân ${m.c+1} · ${ptsAt(m.t)} điểm${m.x?' · lượt thêm':''}${m.ins?' · '+(m.auto?'xen kẽ ':'chèn ')+m.ins:''}`;
   const pin=kind==='plan'&&m.pin?`<button class="pinb" data-act="unpin" data-mid="${m.id}" title="Bỏ ghim">📌 Bỏ ghim</button>`:'';
   const names=i=>kind==='done'?`<span class="chip"><span class="nm">${esc(P(m.q[i])?P(m.q[i]).name:m.names[i])}</span></span>`:pchip(kind,m,m.q[i]);
   return `<div class="mrow"><div class="mmeta">${meta}${tl?` · ${tl}`:''}${pin}</div>
@@ -496,7 +505,6 @@ function vLich(){
   h+=`<section><div class="h2row"><h2>Sắp tới <span>(${S.plan.length})</span></h2><span class="note">Lượt gần nhất là chắc, các lượt sau có thể đổi</span></div>
     ${S.plan.length?`<div class="mlist">${S.plan.map(m=>mrow(m,'plan')).join('')}</div>`:'<p class="note">Hết lịch trong khung giờ sân.</p>'}
     <p class="note">Chạm một người để đổi. Trận đã sửa tay được ghim 📌, app xếp lại các trận khác quanh nó.</p>
-    <div class="row"><button class="btn" data-act="ins" data-v="M">+ Chèn đôi nam</button><button class="btn" data-act="ins" data-v="F">+ Chèn đôi nữ</button></div>
     <div><button class="btn primary" data-act="extra">+ Tạo thêm 1 lượt</button></div></section>`;
   return h;
 }
@@ -636,7 +644,7 @@ document.addEventListener('change',e=>{
   const t=e.target;
   if(t.dataset.cset){const ci=+t.dataset.ci,f=t.dataset.cset,v=t.value;if(v)mut(()=>{S.courts[ci][f]=v;});return;}
   if(t.dataset.flag){const f=t.dataset.flag,v=t.checked;mut(()=>{S[f]=v;});return;}
-  if(t.dataset.num){const f=t.dataset.num,v=Math.round(+t.value);if(v>0)mut(()=>{S[f]=v;});return;}
+  if(t.dataset.num){const f=t.dataset.num,v=Math.round(+t.value);if(v>0||(f==='mixN'&&v===0))mut(()=>{S[f]=v;});return;}
   if(t.dataset.rename){const id=t.dataset.rename,v=t.value.trim();if(v)mut(()=>{P(id).name=v.slice(0,24);});}
 });
 document.addEventListener('input',e=>{
