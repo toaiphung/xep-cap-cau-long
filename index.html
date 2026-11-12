@@ -162,7 +162,7 @@ const KEY='xep-cap-cau-long-v2';
 const LV={A:5,B:4,C:3,D:2,E:1};
 const CAP=l=>(l==='A'||l==='B')?3:2;
 const W={diff:6,type:3,partner:12,opp:4,overCap:20,again:10};
-let S=null,undoStack=[],sheet=null,resetArm=0;
+let S=null,undoStack=[],sheet=null,resetArm=0,toast='',toastT=0;
 const $=id=>document.getElementById(id);
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -321,7 +321,7 @@ function replan(){
           else if(!x.rested&&x.streak>=CAP(p.lv))warn.push(`${p.name}: ${x.streak+1} trận liền`);});
       }
       applyMatch(st,ctx.pair,ctx.opp,q,t0,t0+d,grpIds);
-      out.push({id:s.m.id,q:q.slice(),pin:!!s.m.pin,t:t0,c:s.c.i,x:isX,warn});
+      out.push({id:s.m.id,q:q.slice(),pin:!!s.m.pin,ins:s.m.ins||'',t:t0,c:s.c.i,x:isX,warn});
       s.c.free=t0+d;placed++;if(isX)extraLeft--;
     });
     if(!placed&&courts.every(c=>c.free===Infinity))break;
@@ -349,6 +349,25 @@ function finish(ci){
   const c=S.courts[ci];
   if(now+durAt(now)<=toMin(c.e)+1||S.extra>0)startNext(ci);
 }
+// Chèn 1 trận chỉ nam hoặc chỉ nữ vào lượt sớm nhất có đủ 4 người rảnh, ghim lại
+function insertType(g){
+  const label=g==='M'?'đôi nam':'đôi nữ';
+  const ids=S.players.filter(p=>p.st==='on'&&p.g===g).map(p=>p.id);
+  if(ids.length<4){showToast(`Hôm nay không đủ 4 ${g==='M'?'nam':'nữ'} để xếp trận ${label}.`);return false;}
+  const now=nowMin(),ctx=baseStats(now);
+  for(let i=0;i<=S.plan.length;i++){
+    const t=i<S.plan.length?S.plan[i].t:(S.plan.length?S.plan[S.plan.length-1].t+durAt(S.plan[S.plan.length-1].t):now);
+    const pool=ids.filter(id=>ctx.st[id].busy<=t+1);
+    if(pool.length>=4){
+      const q=solve(1,pool,ctx,4242+i);
+      S.plan.splice(i,0,{id:uid(),q,pin:true,ins:label});
+      return true;
+    }
+    if(i<S.plan.length){const m=S.plan[i];applyMatch(ctx.st,ctx.pair,ctx.opp,m.q,m.t,m.t+durAt(m.t),new Set(m.q));}
+  }
+  showToast(`Chưa tìm được lượt có đủ 4 ${g==='M'?'nam':'nữ'} rảnh.`);return false;
+}
+function showToast(t){toast=t;clearTimeout(toastT);toastT=setTimeout(()=>{toast='';render();},4000);}
 function gamesCount(id){return S.done.filter(m=>m.q.includes(id)).length;}
 function liveOf(id){return S.live.find(m=>m.q.includes(id));}
 function catchUp(p){
@@ -388,7 +407,7 @@ function render(){
   else if(S.tab==='san')h=vSan();
   else if(S.tab==='lich')h=vLich();
   else h=vNguoi();
-  $('view').innerHTML=h;
+  $('view').innerHTML=(toast?`<p class="warn">${esc(toast)}</p>`:'')+h;
   renderSheet();
 }
 
@@ -400,7 +419,7 @@ function vSetup(){
     <div class="frow"><span>Khi 1 sân:</span><input type="number" id="pts1" data-num="pts1" min="5" max="31" value="${S.pts1}"> điểm ≈ <input type="number" id="dur1" data-num="dur1" min="4" max="40" value="${S.dur1}"> phút</div>
     <div class="frow"><span>Khi 2 sân trở lên:</span><input type="number" id="pts2" data-num="pts2" min="5" max="31" value="${S.pts2}"> điểm ≈ <input type="number" id="dur2" data-num="dur2" min="4" max="40" value="${S.dur2}"> phút</div>
     <label class="check"><input type="checkbox" id="showLv" data-flag="showLv" ${S.showLv?'checked':''}> Hiện trình độ trên màn hình</label>
-    <p class="note">Số phút dùng để đoán giờ trong lịch. Lịch tự chỉnh theo giờ bấm “Xong trận” thật.</p></section>`;
+    <p class="note">Số phút dùng để đoán giờ trong lịch. Lịch tự chỉnh theo giờ bấm “Xong trận” thật. Trận chèn thêm có thể đẩy trận cuối ra ngoài giờ, khi đó bấm “+ Tạo thêm 1 lượt”.</p></section>`;
   if(!run){
     h+=`<section class="card"><h2>Danh sách</h2>
       <p class="note">Mỗi dòng: <b>số. Tên-giới-trình</b>, ví dụ “2. Minh-nam-C”. Trình A (mạnh nhất) đến E.</p>
@@ -450,6 +469,7 @@ function vSan(){
   h+='</section>';
   const nxt=S.plan.slice(0,2);
   h+=`<section><h2>Vào tiếp</h2>${nxt.length?`<div class="mlist">${nxt.map(m=>mrow(m,'plan')).join('')}</div>`:`<p class="note">Hết lịch. Còn giờ thì tạo thêm ở đây.</p>`}
+    <div class="row"><button class="btn" data-act="ins" data-v="M">+ Chèn đôi nam</button><button class="btn" data-act="ins" data-v="F">+ Chèn đôi nữ</button></div>
     <div><button class="btn" data-act="extra">+ Tạo thêm 1 lượt</button></div></section>`;
   const ctx=baseStats(now);
   const liveIds=new Set(S.live.flatMap(m=>m.q));
@@ -462,7 +482,7 @@ function mrow(m,kind){
   const tl=typeLabel(m.q);
   const meta=kind==='done'
     ?`<b>Sân ${m.c+1}</b> · ${fmt(m.start)}–${fmt(m.end)}`
-    :`<b>~${fmt(m.t)}</b> · Sân ${m.c+1} · ${ptsAt(m.t)} điểm${m.x?' · lượt thêm':''}`;
+    :`<b>~${fmt(m.t)}</b> · Sân ${m.c+1} · ${ptsAt(m.t)} điểm${m.x?' · lượt thêm':''}${m.ins?' · chèn '+m.ins:''}`;
   const pin=kind==='plan'&&m.pin?`<button class="pinb" data-act="unpin" data-mid="${m.id}" title="Bỏ ghim">📌 Bỏ ghim</button>`:'';
   const names=i=>kind==='done'?`<span class="chip"><span class="nm">${esc(P(m.q[i])?P(m.q[i]).name:m.names[i])}</span></span>`:pchip(kind,m,m.q[i]);
   return `<div class="mrow"><div class="mmeta">${meta}${tl?` · ${tl}`:''}${pin}</div>
@@ -476,6 +496,7 @@ function vLich(){
   h+=`<section><div class="h2row"><h2>Sắp tới <span>(${S.plan.length})</span></h2><span class="note">Lượt gần nhất là chắc, các lượt sau có thể đổi</span></div>
     ${S.plan.length?`<div class="mlist">${S.plan.map(m=>mrow(m,'plan')).join('')}</div>`:'<p class="note">Hết lịch trong khung giờ sân.</p>'}
     <p class="note">Chạm một người để đổi. Trận đã sửa tay được ghim 📌, app xếp lại các trận khác quanh nó.</p>
+    <div class="row"><button class="btn" data-act="ins" data-v="M">+ Chèn đôi nam</button><button class="btn" data-act="ins" data-v="F">+ Chèn đôi nữ</button></div>
     <div><button class="btn primary" data-act="extra">+ Tạo thêm 1 lượt</button></div></section>`;
   return h;
 }
@@ -570,6 +591,7 @@ document.addEventListener('click',e=>{
     case 'startNext':mut(()=>startNext(+t.dataset.ci));break;
     case 'finish':mut(()=>finish(+t.dataset.ci));break;
     case 'extra':mut(()=>{S.extra++;});break;
+    case 'ins':{const g=t.dataset.v;mut(()=>{insertType(g);});break;}
     case 'unpin':{const id=t.dataset.mid;mut(()=>{const m=S.plan.find(x=>x.id===id);if(m)m.pin=false;});if(sheet&&sheet.type==='mp')sheet=null;render();break;}
     case 'pchip':sheet={type:'mp',kind:t.dataset.kind,mid:t.dataset.mid,pid:t.dataset.pid,mode:''};renderSheet();break;
     case 'prow':sheet={type:'pr',pid:t.dataset.pid};renderSheet();break;
