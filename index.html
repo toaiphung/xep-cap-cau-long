@@ -749,7 +749,8 @@ document.addEventListener('click',e=>{
       if(!resetArm){resetArm=1;render();setTimeout(()=>{if(resetArm){resetArm=0;render();}},4000);break;}
       resetArm=0;
       mut(()=>{const day=dayTally();if(Object.keys(day).length){S.hist=mergeTally(S.hist,day);S.nBuoi++;}
-        S.listText=S.players.map((p,i)=>`${i+1}. ${p.name}-${p.g==='M'?'nam':p.g==='F'?'nữ':''}-${p.lv}`).join('\n');
+        // Người chưa có giới: chỉ ghi tên (trình C khi đó là mặc định), để danh sách gốc tự điền lại
+        S.listText=S.players.map((p,i)=>p.g?`${i+1}. ${p.name}-${p.g==='M'?'nam':'nữ'}-${p.lv}`:`${i+1}. ${p.name}`).join('\n');
         S.absent=S.players.filter(p=>p.st!=='on').map(p=>norm(p.name));S.phase='setup';S.done=[];S.live=[];S.plan=[];S.extra=0;});
       break;
     case 'startNext':mut(()=>startNext(+t.dataset.ci));break;
