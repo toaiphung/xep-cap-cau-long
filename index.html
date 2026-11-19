@@ -215,10 +215,10 @@ const shuffle=(a,r)=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1)
 const SEED_LIST='';
 function seed(){
   return {v:2,phase:'setup',tab:'san',courts:[{s:'20:00',e:'22:00'},{s:'21:00',e:'22:00'}],pts1:15,dur1:12,pts2:21,dur2:16,
-    listText:SEED_LIST,absent:[],showLv:false,mixN:3,players:[],done:[],live:[],plan:[],extra:0,seq:0,hist:{},nBuoi:0,rk:'day'};
+    listText:SEED_LIST,absent:[],showLv:false,mixN:3,players:[],done:[],live:[],plan:[],extra:0,seq:0,hist:{},nBuoi:0,rk:'day',known:{}};
 }
-function load(){try{const r=localStorage.getItem(KEY);if(r){const s=JSON.parse(r);if(s&&s.v===2){s.hist=s.hist||{};s.nBuoi=s.nBuoi||0;s.rk=s.rk||'day';return s;}}}catch(e){}return null;}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function load(){try{const r=localStorage.getItem(KEY);if(r){const s=JSON.parse(r);if(s&&s.v===2){s.hist=s.hist||{};s.nBuoi=s.nBuoi||0;s.rk=s.rk||'day';s.known=s.known||{};return s;}}}catch(e){}return null;}
+function save(){S.players.forEach(p=>remember(S.known,p));try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 function mut(fn){undoStack.push(JSON.stringify(S));if(undoStack.length>60)undoStack.shift();fn();if(S.phase==='run')replan();save();render();}
 
 /* ---------- Đọc danh sách "1. Tên-giới-trình" ---------- */
@@ -237,6 +237,24 @@ function parseLines(txt){
   });
   return out;
 }
+
+/* ---------- Trí nhớ người chơi: tự điền giới + trình cho tên đã gặp; kiểm ở tests/tu-dien.test.mjs ---------- */
+//#td-start
+function remember(k,p){
+  if(!p.g&&!p.lv)return;
+  const o=k[norm(p.name)]||{};
+  k[norm(p.name)]={name:p.name,g:p.g||o.g||'',lv:p.lv||o.lv||''};
+}
+function fillKnown(ps,k){
+  const byD={};for(const key in k)byD[deacc(k[key].name)]=k[key];
+  return ps.map(p=>{
+    if(p.g&&p.lv)return p;
+    const o=k[norm(p.name)]||byD[deacc(p.name)];
+    return o?{name:o.name,g:p.g||o.g,lv:p.lv||o.lv,auto:true}:p;
+  });
+}
+//#td-end
+const parseList=txt=>fillKnown(parseLines(txt),S.known);
 
 /* ---------- Thống kê thực tế: phát lại các trận đã đánh + đang đánh ---------- */
 function baseStats(now){
@@ -509,13 +527,14 @@ function vSetup(){
   return h;
 }
 function vPreview(){
-  const ps=parseLines(S.listText);
+  const ps=parseList(S.listText);
   const abs=new Set(S.absent);
   const on=ps.filter(p=>!abs.has(norm(p.name)));
   const nam=on.filter(p=>p.g==='M').length,nu=on.filter(p=>p.g==='F').length;
-  const miss=ps.filter(p=>!p.g||!p.lv).length;
+  const miss=ps.filter(p=>!p.g||!p.lv),auto=ps.filter(p=>p.auto).length;
   return `<p class="note">Nhận <b>${ps.length}</b> người · có mặt <b>${on.length}</b> (${nam} nam, ${nu} nữ). Chạm tên để đánh dấu vắng.</p>
-    ${miss?`<p class="warn">${miss} người thiếu giới hoặc trình: thiếu trình sẽ tính là C, sửa sau ở tab Người.</p>`:''}
+    ${auto?`<p class="note">✓ Tự điền giới + trình cho <b>${auto}</b> người theo danh sách cũ.</p>`:''}
+    ${miss.length?`<p class="warn">Người mới, chưa có giới hoặc trình: ${miss.map(p=>esc(p.name)).join(', ')}. Thiếu trình sẽ tính là C, sửa sau ở tab Người.</p>`:''}
     <div class="pv">${ps.map(p=>`<button class="chip ${abs.has(norm(p.name))?'off':''}" data-act="tAbs" data-name="${esc(p.name)}"><i class="g ${p.g}"></i><span class="nm">${esc(p.name)}</span><span class="lv">${p.lv||'?'}</span></button>`).join('')}</div>`;
 }
 
@@ -696,7 +715,7 @@ document.addEventListener('click',e=>{
     case 'delCourt':{const ci=+t.dataset.ci;mut(()=>{S.live=S.live.filter(m=>m.c!==ci).map(m=>({...m,c:m.c>ci?m.c-1:m.c}));S.courts.splice(ci,1);});break;}
     case 'tAbs':{const n=norm(t.dataset.name);const i=S.absent.indexOf(n);if(i<0)S.absent.push(n);else S.absent.splice(i,1);save();$('preview').innerHTML=vPreview();break;}
     case 'start':{
-      const ps=parseLines(S.listText);if(!ps.length)break;
+      const ps=parseList(S.listText);if(!ps.length)break;
       mut(()=>{const abs=new Set(S.absent);S.players=ps.map((p,i)=>({id:uid(),name:p.name,g:p.g,lv:p.lv||'C',st:abs.has(norm(p.name))?'off':'on',adj:0,joined:i}));
         S.seq=ps.length;S.done=[];S.live=[];S.plan=[];S.extra=0;S.phase='run';S.tab='san';});
       break;}
@@ -753,7 +772,7 @@ document.addEventListener('click',e=>{
       mut(()=>{S.players=S.players.filter(p=>p.id!==id);S.plan.forEach(m=>{if(m.q.includes(id))m.pin=false;});});
       sheet=null;renderSheet();break;}
     case 'addGo':{
-      const ps=parseLines(($('addText').value||'').split(/\r?\n/).map(l=>/^\s*\d/.test(l)?l:'0. '+l).join('\n'));
+      const ps=parseList(($('addText').value||'').split(/\r?\n/).map(l=>/^\s*\d/.test(l)?l:'0. '+l).join('\n'));
       if(!ps.length)break;
       mut(()=>{ps.forEach(x=>{
         const ex=S.players.find(p=>norm(p.name)===norm(x.name));
@@ -786,6 +805,9 @@ setInterval(()=>{
 
 function start(d){
   S=(d&&d.S)||load()||seed();
+  S.known=S.known||{};
+  // Lần đầu: học giới + trình từ danh sách người và ô danh sách đã lưu
+  if(!Object.keys(S.known).length){parseLines(S.listText||'').forEach(p=>remember(S.known,p));S.players.forEach(p=>remember(S.known,p));}
   if(S.phase==='run')replan();
   render();
 }
