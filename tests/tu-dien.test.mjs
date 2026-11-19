@@ -8,7 +8,16 @@ const code = html.slice(html.indexOf('//#td-start'), html.indexOf('//#td-end'));
 assert.ok(code.length > 20, 'khong thay khoi //#td-start ... //#td-end');
 const norm = s => s.normalize('NFC').toLowerCase().trim();
 const deacc = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase().trim();
-const { remember, fillKnown } = new Function('norm', 'deacc', code + 'return {remember,fillKnown};')(norm, deacc);
+const { remember, fillKnown, mergeKnown } = new Function('norm', 'deacc', code + 'return {remember,fillKnown,mergeKnown};')(norm, deacc);
+
+test('mergeKnown: danh sach goc lam nen; may da sua (co gioi) thi thang; muc thieu gioi khong de len goc', () => {
+  const goc = { 'kha': { name: 'Kha', g: 'M', lv: 'A' }, 'hiền': { name: 'Hiền', g: 'F', lv: 'B' } };
+  const may = { 'kha': { name: 'Kha', g: '', lv: 'C' }, 'hiền': { name: 'Hiền', g: 'F', lv: 'A' }, 'mới': { name: 'Mới', g: '', lv: 'C' } };
+  const m = mergeKnown(goc, may);
+  assert.deepEqual(m['kha'], { name: 'Kha', g: 'M', lv: 'A' });
+  assert.deepEqual(m['hiền'], { name: 'Hiền', g: 'F', lv: 'A' });
+  assert.deepEqual(m['mới'], { name: 'Mới', g: '', lv: 'C' });
+});
 
 test('remember: nho gioi + trinh, bo qua nguoi chua co gi', () => {
   const k = {};

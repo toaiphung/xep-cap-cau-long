@@ -253,8 +253,34 @@ function fillKnown(ps,k){
     return o?{name:o.name,g:p.g||o.g,lv:p.lv||o.lv,auto:true}:p;
   });
 }
+// Danh sách gốc làm nền; mục trên máy chỉ thắng khi đã có giới (mục thiếu giới thường là trình C mặc định)
+function mergeKnown(goc,may){
+  const k={...goc};
+  for(const key in may){if(may[key].g||!k[key])k[key]=may[key];}
+  return k;
+}
 //#td-end
-const parseList=txt=>fillKnown(parseLines(txt),S.known);
+// Danh sách gốc của nhóm (bạn chốt 19/11/2026); sửa ở tab Người trên máy thì máy đó theo bản sửa
+const DS_GOC=`Vee-nữ-B
+Kha-nam-A
+Châu-nữ-B
+Đoan-nữ-C
+Phúc-nam-B
+Trực-nam-A
+Khanh-nữ-D
+Luân-nam-B
+Chi-nữ-D
+Khánh-nam-C
+Hậu-nữ-D
+Hiền-nữ-B
+Toại-nam-A
+Tài-nam-C
+Vy-nữ-B
+Đức-nam-A
+Khánh Vy-nữ-B
+Yến Vy-nữ-B`;
+const KNOWN_GOC=(()=>{const k={};parseLines(DS_GOC).forEach(p=>remember(k,p));return k;})();
+const parseList=txt=>fillKnown(parseLines(txt),mergeKnown(KNOWN_GOC,S.known));
 
 /* ---------- Thống kê thực tế: phát lại các trận đã đánh + đang đánh ---------- */
 function baseStats(now){
