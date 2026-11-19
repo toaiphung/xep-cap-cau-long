@@ -9,11 +9,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
 <style>
-/* Bố cục: app 1 cột cho điện thoại, 3 tab dưới cùng (Sân / Lịch / Người); sân là thẻ xanh có vạch trắng, lưới giữa */
+/* Bố cục: app 1 cột cho điện thoại, 4 tab dưới cùng (Sân / Lịch / Hạng / Người); sân là thẻ xanh có vạch trắng, lưới giữa */
 :root{
   --bg:#edf1ec; --surface:#ffffff; --ink:#16241c; --muted:#5b6c61; --border:#d3ddd5;
   --court:#1f6a47; --court-2:#2d5a45; --court-ink:#f2faf5; --court-line:rgba(255,255,255,.82); --chip:rgba(255,255,255,.15);
-  --accent:#e2a623; --accent-ink:#2a1e00;
+  --accent:#e2a623; --accent-ink:#2a1e00; --court-txt:#1f6a47;
   --male:#2c6ad3; --female:#cf3f7a; --warn:#b5541b; --warn-bg:#fbefe4; --scrim:rgba(10,20,14,.45);
   --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -21,11 +21,11 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0e1611; --surface:#16211a; --ink:#e3ece5; --muted:#93a598; --border:#2a3a30;
   --court:#185a3b; --court-2:#22392d; --court-ink:#eef8f1; --court-line:rgba(255,255,255,.7); --chip:rgba(255,255,255,.12);
-  --accent:#f0b93a; --accent-ink:#2a1e00; --male:#73a2ff; --female:#ff7fae; --warn:#f08a4b; --warn-bg:#33241a; --scrim:rgba(0,0,0,.6); color-scheme:dark}}
+  --accent:#f0b93a; --accent-ink:#2a1e00; --court-txt:#5fcf98; --male:#73a2ff; --female:#ff7fae; --warn:#f08a4b; --warn-bg:#33241a; --scrim:rgba(0,0,0,.6); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0e1611; --surface:#16211a; --ink:#e3ece5; --muted:#93a598; --border:#2a3a30;
   --court:#185a3b; --court-2:#22392d; --court-ink:#eef8f1; --court-line:rgba(255,255,255,.7); --chip:rgba(255,255,255,.12);
-  --accent:#f0b93a; --accent-ink:#2a1e00; --male:#73a2ff; --female:#ff7fae; --warn:#f08a4b; --warn-bg:#33241a; --scrim:rgba(0,0,0,.6); color-scheme:dark}
+  --accent:#f0b93a; --accent-ink:#2a1e00; --court-txt:#5fcf98; --male:#73a2ff; --female:#ff7fae; --warn:#f08a4b; --warn-bg:#33241a; --scrim:rgba(0,0,0,.6); color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
 button,input,textarea{font:inherit;color:inherit}
@@ -137,6 +137,38 @@ textarea{width:100%;min-height:200px;border:1px solid var(--border);border-radiu
 .hide-lv .lv,.hide-lv .sumlv,.hide-lv .score,.hide-lv .lvn,.hide-lv .lvcol{display:none!important}
 .hide-lv .prow,.hide-lv .phead{grid-template-columns:minmax(0,1fr) 46px 52px}
 .check{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}.check input{width:18px;height:18px;accent-color:var(--court)}
+
+/* Tỉ số: bảng nhập (2 đội, số to, −/+) và kết quả trong lịch */
+.scteam{display:flex;flex-direction:column;gap:8px;border:1.5px solid var(--border);background:var(--bg);border-radius:14px;padding:10px 12px}
+.scteam.win{border-color:var(--court-txt);box-shadow:inset 0 0 0 1px var(--court-txt)}
+.scnames{display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap}
+.scnames .wtag{margin-left:auto;font-size:12px;font-weight:700;color:var(--court-txt);visibility:hidden}
+.scteam.win .wtag{visibility:visible}
+.scctl{display:flex;align-items:center;gap:8px}
+.stp{width:48px;height:48px;border:1px solid var(--border);background:var(--surface);border-radius:12px;font-size:24px;font-weight:600;line-height:1;flex:none}
+.scin{flex:1;min-width:0;height:56px;text-align:center;border:1px solid var(--border);background:var(--surface);border-radius:12px;font-family:var(--f-display);font-size:34px;font-weight:700;font-variant-numeric:tabular-nums}
+.scq{height:48px;padding:0 10px;border:1px dashed var(--court-txt);color:var(--court-txt);background:transparent;border-radius:12px;font-weight:700;font-size:13px;flex:none}
+.scmid{text-align:center;font-family:var(--f-display);font-weight:700;letter-spacing:.14em;color:var(--muted);font-size:13px}
+.sheet .row2{display:flex;gap:8px}.sheet .row2 .btn{flex:1;padding:11px 12px}
+.res{margin-left:auto;border:0;background:transparent;font-family:var(--f-display);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;padding:0 2px;color:var(--muted)}
+.res b{font-weight:600}.res b.w{color:var(--ink);font-weight:700}
+.btn.sm{margin-left:auto;padding:4px 10px;font-size:13px;border-color:var(--court-txt);color:var(--court-txt)}
+.mteams .chip.win{border-color:var(--court-txt);font-weight:700}
+
+/* Hạng */
+.rlist{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.rrow,.rhead{display:grid;grid-template-columns:30px minmax(0,1fr) 54px 46px 46px;gap:8px;align-items:center;padding:10px 12px}
+.rrow{border-top:1px solid var(--border)}.rrow:first-child{border-top:0}
+.rhead{padding-block:0;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rrow>span:nth-child(n+3),.rhead>span:nth-child(n+3){text-align:right;font-variant-numeric:tabular-nums}
+.rk{display:flex;align-items:center;justify-content:center;width:28px;height:28px;font-family:var(--f-display);font-weight:700;font-size:18px;color:var(--muted)}
+.rk.top{color:var(--accent-ink);background:var(--accent);border-radius:50%}
+.rrow .nm{display:flex;align-items:center;gap:8px;font-weight:600;min-width:0}
+.rrow .nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rrow .pc{font-weight:700}
+.rrow .sm2{color:var(--muted);font-size:13px}
+.pos{color:var(--court-txt)}.neg{color:var(--warn)}
+@media (prefers-reduced-motion: no-preference){.stp,.scq{transition:transform .08s}.stp:active,.scq:active{transform:scale(.94)}}
 @media (prefers-reduced-motion: no-preference){.chip,.btn,.opt{transition:transform .08s}.chip:active,.btn:active,.opt:active{transform:scale(.97)}}
 </style>
 </head>
@@ -152,6 +184,7 @@ textarea{width:100%;min-height:200px;border:1px solid var(--border);border-radiu
 <nav class="tabs" id="tabs" hidden>
   <button data-act="tab" data-tab="san">Sân</button>
   <button data-act="tab" data-tab="lich">Lịch</button>
+  <button data-act="tab" data-tab="hang">Hạng</button>
   <button data-act="tab" data-tab="nguoi">Người</button>
 </nav>
 <div class="scrim" id="scrim" data-act="close" hidden></div>
@@ -162,7 +195,7 @@ const KEY='xep-cap-cau-long-v2';
 const LV={A:5,B:4,C:3,D:2,E:1};
 const CAP=l=>(l==='A'||l==='B')?3:2;
 const W={diff:6,type:3,partner:12,opp:4,overCap:20,again:10};
-let S=null,undoStack=[],sheet=null,resetArm=0,toast='',toastT=0;
+let S=null,undoStack=[],sheet=null,resetArm=0,histArm=0,toast='',toastT=0;
 const $=id=>document.getElementById(id);
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -182,9 +215,9 @@ const shuffle=(a,r)=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1)
 const SEED_LIST='';
 function seed(){
   return {v:2,phase:'setup',tab:'san',courts:[{s:'20:00',e:'22:00'},{s:'21:00',e:'22:00'}],pts1:15,dur1:12,pts2:21,dur2:16,
-    listText:SEED_LIST,absent:[],showLv:false,mixN:3,players:[],done:[],live:[],plan:[],extra:0,seq:0};
+    listText:SEED_LIST,absent:[],showLv:false,mixN:3,players:[],done:[],live:[],plan:[],extra:0,seq:0,hist:{},nBuoi:0,rk:'day'};
 }
-function load(){try{const r=localStorage.getItem(KEY);if(r){const s=JSON.parse(r);if(s&&s.v===2)return s;}}catch(e){}return null;}
+function load(){try{const r=localStorage.getItem(KEY);if(r){const s=JSON.parse(r);if(s&&s.v===2){s.hist=s.hist||{};s.nBuoi=s.nBuoi||0;s.rk=s.rk||'day';return s;}}}catch(e){}return null;}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 function mut(fn){undoStack.push(JSON.stringify(S));if(undoStack.length>60)undoStack.shift();fn();if(S.phase==='run')replan();save();render();}
 
@@ -239,6 +272,36 @@ function typeLabel(q){
   const n=f=>['đôi nam','nam nữ','đôi nữ'][f];
   return f1===f2?n(f1):n(f1)+' vs '+n(f2);
 }
+
+/* ---------- Xếp hạng: cộng tỉ số theo từng người (khớp theo tên); kiểm ở tests/xep-hang.test.mjs ---------- */
+//#xh-start
+function tally(ms){
+  const t={};
+  ms.forEach(m=>{
+    if(!m.sc)return;
+    m.names.forEach((name,i)=>{
+      const k=norm(name),me=i<2?0:1,s=t[k]||(t[k]={name,n:0,w:0,l:0,pf:0,pa:0});
+      s.name=name;s.n++;s.pf+=m.sc[me];s.pa+=m.sc[1-me];
+      if(m.sc[me]>m.sc[1-me])s.w++;else s.l++;
+    });
+  });
+  return t;
+}
+function mergeTally(a,b){
+  const t={};
+  [a,b].forEach(x=>{for(const k in x){const s=x[k],o=t[k]||(t[k]={name:s.name,n:0,w:0,l:0,pf:0,pa:0});
+    o.name=s.name;o.n+=s.n;o.w+=s.w;o.l+=s.l;o.pf+=s.pf;o.pa+=s.pa;}});
+  return t;
+}
+function rankRows(t){
+  const r=Object.values(t).filter(s=>s.n>0).map(s=>({...s,pct:Math.round(100*s.w/s.n),diff:s.pf-s.pa}))
+    .sort((x,y)=>y.w/y.n-x.w/x.n||y.diff-x.diff||y.w-x.w||x.name.localeCompare(y.name,'vi'));
+  r.forEach((s,i)=>{const p=r[i-1];s.rank=p&&p.w/p.n===s.w/s.n&&p.diff===s.diff&&p.w===s.w?p.rank:i+1;});
+  return r;
+}
+//#xh-end
+const doneNames=m=>m.q.map((id,i)=>P(id)?P(id).name:m.names[i]);
+const dayTally=()=>tally(S.done.map(m=>({names:doneNames(m),sc:m.sc})));
 
 /* ---------- Chọn 4k người và chia cặp cho k sân cùng lúc ---------- */
 function solve(k,pool,ctx,seedN,want){
@@ -415,6 +478,7 @@ function render(){
   if(!run||S.tab==='setup')h=vSetup();
   else if(S.tab==='san')h=vSan();
   else if(S.tab==='lich')h=vLich();
+  else if(S.tab==='hang')h=vHang();
   else h=vNguoi();
   $('view').innerHTML=(toast?`<p class="warn">${esc(toast)}</p>`:'')+h;
   renderSheet();
@@ -438,8 +502,10 @@ function vSetup(){
       <button class="btn primary big" data-act="start">Bắt đầu buổi</button>`;
   }else{
     h+=`<button class="btn primary big" data-act="tab" data-tab="san">Xong, về sân</button>
-      <section class="card"><h2>Buổi mới</h2><p class="note">Xoá lịch sử trận, giữ danh sách người để sửa lại.</p><div><button class="btn danger" data-act="reset">${resetArm?'Bấm lần nữa để xoá':'Bắt đầu buổi mới'}</button></div></section>`;
+      <section class="card"><h2>Buổi mới</h2><p class="note">Cộng tỉ số hôm nay vào bảng tích luỹ, rồi xoá lịch sử trận. Giữ danh sách người để sửa lại.</p><div><button class="btn danger" data-act="reset">${resetArm?'Bấm lần nữa để xoá':'Bắt đầu buổi mới'}</button></div></section>`;
   }
+  const nH=Object.keys(S.hist).length;
+  if(nH)h+=`<section class="card"><h2>Bảng tích luỹ</h2><p class="note">${nH} người · ${S.nBuoi} buổi đã cộng. Xoá để bắt đầu mùa mới.</p><div><button class="btn danger" data-act="clrHist">${histArm?'Bấm lần nữa để xoá':'Xoá bảng tích luỹ'}</button></div></section>`;
   return h;
 }
 function vPreview(){
@@ -493,9 +559,13 @@ function mrow(m,kind){
     ?`<b>Sân ${m.c+1}</b> · ${fmt(m.start)}–${fmt(m.end)}`
     :`<b>~${fmt(m.t)}</b> · Sân ${m.c+1} · ${ptsAt(m.t)} điểm${m.x?' · lượt thêm':''}${m.ins?' · '+(m.auto?'xen kẽ ':'chèn ')+m.ins:''}`;
   const pin=kind==='plan'&&m.pin?`<button class="pinb" data-act="unpin" data-mid="${m.id}" title="Bỏ ghim">📌 Bỏ ghim</button>`:'';
-  const names=i=>kind==='done'?`<span class="chip"><span class="nm">${esc(P(m.q[i])?P(m.q[i]).name:m.names[i])}</span></span>`:pchip(kind,m,m.q[i]);
+  const sc=kind==='done'&&m.sc,win=sc?(sc[0]>sc[1]?0:1):-1;
+  const names=i=>kind==='done'?`<span class="chip ${win===(i<2?0:1)?'win':''}"><span class="nm">${esc(P(m.q[i])?P(m.q[i]).name:m.names[i])}</span></span>`:pchip(kind,m,m.q[i]);
+  const right=kind!=='done'?`<span class="score">${a}–${b}</span>`
+    :sc?`<button class="res" data-act="score" data-mid="${m.id}" aria-label="Sửa tỉ số"><b class="${win===0?'w':''}">${sc[0]}</b>–<b class="${win===1?'w':''}">${sc[1]}</b></button>`
+    :`<button class="btn sm" data-act="score" data-mid="${m.id}">Nhập tỉ số</button>`;
   return `<div class="mrow"><div class="mmeta">${meta}${tl?` · ${tl}`:''}${pin}</div>
-    <div class="mteams">${names(0)}${names(1)}<span class="vs">vs</span>${names(2)}${names(3)}<span class="score">${a}–${b}</span></div>
+    <div class="mteams">${names(0)}${names(1)}<span class="vs">vs</span>${names(2)}${names(3)}${right}</div>
     ${(m.warn||[]).map(w=>`<div class="warn">⚠ ${esc(w)}</div>`).join('')}</div>`;
 }
 function vLich(){
@@ -506,6 +576,24 @@ function vLich(){
     ${S.plan.length?`<div class="mlist">${S.plan.map(m=>mrow(m,'plan')).join('')}</div>`:'<p class="note">Hết lịch trong khung giờ sân.</p>'}
     <p class="note">Chạm một người để đổi. Trận đã sửa tay được ghim 📌, app xếp lại các trận khác quanh nó.</p>
     <div><button class="btn primary" data-act="extra">+ Tạo thêm 1 lượt</button></div></section>`;
+  return h;
+}
+function vHang(){
+  const day=dayTally(),all=S.rk==='all';
+  const rows=rankRows(all?mergeTally(S.hist,day):day);
+  const noSc=S.done.filter(m=>!m.sc).length,scN=S.done.length-noSc;
+  let h=`<div class="seg">${[['day','Hôm nay'],['all','Tích luỹ']].map(([v,t])=>`<button class="${S.rk===v?'on':''}" data-act="rk" data-v="${v}">${t}</button>`).join('')}</div>`;
+  h+=`<p class="note">${all?`Cộng dồn ${S.nBuoi} buổi trước và hôm nay · chỉ lưu trên máy này.`:`Tính từ ${scN} trận có tỉ số.`} Xếp theo % thắng, bằng nhau thì so hiệu số.</p>`;
+  if(noSc)h+=`<div class="warn h2row"><span>${noSc} trận hôm nay chưa có tỉ số</span><button class="btn sm" data-act="tab" data-tab="lich">Nhập ở Lịch</button></div>`;
+  if(!rows.length)return h+`<section class="card"><p class="note">Chưa có trận nào có tỉ số. Bấm <b>Xong trận</b> trên sân để nhập.</p></section>`;
+  const gOf=name=>{const p=S.players.find(x=>norm(x.name)===norm(name));return p?p.g:'';};
+  h+=`<section><div class="rhead"><span>#</span><span>Tên</span><span>T–B</span><span>%</span><span>HS</span></div>
+    <div class="rlist">${rows.map(r=>`<div class="rrow"><span class="rk ${r.rank<=3?'top':''}">${r.rank}</span><span class="nm"><i class="g ${gOf(r.name)}"></i><span>${esc(r.name)}</span></span><span class="sm2">${r.w}–${r.l}</span><span class="pc">${r.pct}%</span><span class="${r.diff>0?'pos':r.diff<0?'neg':''}">${r.diff>0?'+':''}${r.diff}</span></div>`).join('')}</div>
+    <p class="note">T–B: thắng–thua · HS: hiệu số = điểm ghi − điểm mất.</p></section>`;
+  if(!all){
+    const inT=new Set(Object.keys(day)),rest=S.players.filter(p=>p.st==='on'&&!inT.has(norm(p.name)));
+    if(rest.length)h+=`<section><h2>Chưa có tỉ số <span>(${rest.length})</span></h2><div class="wait">${rest.map(p=>`<span class="chip"><i class="g ${p.g}"></i><span class="nm">${esc(p.name)}</span></span>`).join('')}</div></section>`;
+  }
   return h;
 }
 function vNguoi(){
@@ -557,12 +645,33 @@ function renderSheet(){
       <div class="seg">${[['on','Có mặt'],['off','Vắng'],['inj','🩹 Chấn thương']].map(([v,t])=>`<button class="${p.st===v?'on':''}" data-act="setSt" data-pid="${p.id}" data-v="${v}">${t}</button>`).join('')}</div>
       <button class="btn danger" data-act="del">${sheet.delArm?'Bấm lần nữa để xoá khỏi danh sách':'Xoá khỏi danh sách'}</button>
       <button class="btn" data-act="close">Xong</button>`;
+  }else if(sheet.type==='sc'){
+    const m=S.done.find(x=>x.id===sheet.mid);if(!m){sheet=null;return renderSheet();}
+    const nm=doneNames(m),pts=ptsAt(m.start);
+    const team=t=>`<div class="scteam" id="sct${t}"><div class="scnames"><i class="g ${P(m.q[2*t])?P(m.q[2*t]).g:''}"></i>${esc(nm[2*t])}<i class="g ${P(m.q[2*t+1])?P(m.q[2*t+1]).g:''}"></i>${esc(nm[2*t+1])}<span class="wtag">THẮNG</span></div>
+      <div class="scctl"><button class="stp" data-act="scStep" data-t="${t}" data-d="-1" aria-label="Bớt 1 điểm">−</button><input class="scin" id="sc${t}" data-sc="${t}" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" value="${sheet.v[t]}" placeholder="0" aria-label="Điểm đội ${t+1}"><button class="stp" data-act="scStep" data-t="${t}" data-d="1" aria-label="Thêm 1 điểm">+</button><button class="scq" data-act="scSet" data-t="${t}">${pts}</button></div></div>`;
+    h=`<h3>Tỉ số · Sân ${m.c+1} · ${fmt(m.start)}–${fmt(m.end)}</h3>
+      <p class="note">Bấm <b>${pts}</b> ở đội thắng, rồi gõ điểm đội thua.</p>
+      ${team(0)}<div class="scmid">VS</div>${team(1)}
+      <p class="warn" id="scErr" hidden>Cầu lông không có hoà: 2 đội phải khác điểm.</p>
+      <button class="btn primary big" id="scSave" data-act="scSave">Lưu tỉ số</button>
+      <div class="row2">${m.sc?'<button class="btn danger" data-act="scDel">Xoá tỉ số</button>':''}<button class="btn" data-act="close">${m.sc?'Đóng':'Bỏ qua'}</button></div>`;
+    el.innerHTML=h;scSync();return;
   }else if(sheet.type==='add'){
     h=`<h3>Thêm người</h3><p class="note">Mỗi dòng một người: <b>Tên-giới-trình</b>, ví dụ “Lan-nữ-B”. Người đến muộn được tính như đã đánh bằng người ít trận nhất.</p>
       <textarea id="addText" style="min-height:110px" placeholder="Lan-nữ-B"></textarea>
       <button class="btn primary big" data-act="addGo">Thêm vào danh sách</button><button class="btn" data-act="close">Đóng</button>`;
   }
   el.innerHTML=h;
+}
+
+// Cập nhật bảng tỉ số tại chỗ (không vẽ lại, để không mất bàn phím khi đang gõ)
+const scVal=t=>{const v=String(sheet.v[t]).trim();return /^\d{1,2}$/.test(v)?+v:null;};
+function scSync(){
+  const a=scVal(0),b=scVal(1),ok=a!==null&&b!==null&&a!==b;
+  [0,1].forEach(t=>{const e=$('sct'+t);if(e)e.classList.toggle('win',ok&&(t===0?a>b:b>a));});
+  if($('scErr'))$('scErr').hidden=!(a!==null&&a===b);
+  if($('scSave'))$('scSave').disabled=!ok;
 }
 
 /* ---------- Đổi trạng thái người ---------- */
@@ -578,6 +687,7 @@ document.addEventListener('click',e=>{
   const t=e.target.closest('[data-act]');if(!t)return;
   const a=t.dataset.act;
   if(a!=='reset'&&resetArm)resetArm=0;
+  if(a!=='clrHist'&&histArm)histArm=0;
   switch(a){
     case 'undo':if(undoStack.length){S=JSON.parse(undoStack.pop());sheet=null;save();render();}break;
     case 'tab':S.tab=t.dataset.tab;sheet=null;save();render();window.scrollTo(0,0);break;
@@ -593,11 +703,24 @@ document.addEventListener('click',e=>{
     case 'reset':
       if(!resetArm){resetArm=1;render();setTimeout(()=>{if(resetArm){resetArm=0;render();}},4000);break;}
       resetArm=0;
-      mut(()=>{S.listText=S.players.map((p,i)=>`${i+1}. ${p.name}-${p.g==='M'?'nam':p.g==='F'?'nữ':''}-${p.lv}`).join('\n');
+      mut(()=>{const day=dayTally();if(Object.keys(day).length){S.hist=mergeTally(S.hist,day);S.nBuoi++;}
+        S.listText=S.players.map((p,i)=>`${i+1}. ${p.name}-${p.g==='M'?'nam':p.g==='F'?'nữ':''}-${p.lv}`).join('\n');
         S.absent=S.players.filter(p=>p.st!=='on').map(p=>norm(p.name));S.phase='setup';S.done=[];S.live=[];S.plan=[];S.extra=0;});
       break;
     case 'startNext':mut(()=>startNext(+t.dataset.ci));break;
-    case 'finish':mut(()=>finish(+t.dataset.ci));break;
+    case 'finish':{const ci=+t.dataset.ci,lv=S.live.find(m=>m.c===ci);mut(()=>finish(ci));
+      if(lv){sheet={type:'sc',mid:lv.id,v:['','']};renderSheet();}break;}
+    case 'score':{const m=S.done.find(x=>x.id===t.dataset.mid);if(!m)break;sheet={type:'sc',mid:m.id,v:m.sc?m.sc.map(String):['','']};renderSheet();break;}
+    case 'scStep':{const i=+t.dataset.t,v=Math.max(0,Math.min(99,(scVal(i)??0)+(+t.dataset.d)));sheet.v[i]=String(v);$('sc'+i).value=v;scSync();break;}
+    case 'scSet':{const i=+t.dataset.t,m=S.done.find(x=>x.id===sheet.mid);sheet.v[i]=String(ptsAt(m.start));$('sc'+i).value=sheet.v[i];scSync();
+      const o=$('sc'+(1-i));if(o&&scVal(1-i)===null){o.focus();}break;}
+    case 'scSave':{const a=scVal(0),b=scVal(1),id=sheet.mid;if(a===null||b===null||a===b)break;
+      mut(()=>{const m=S.done.find(x=>x.id===id);if(m)m.sc=[a,b];});sheet=null;renderSheet();break;}
+    case 'scDel':{const id=sheet.mid;mut(()=>{const m=S.done.find(x=>x.id===id);if(m)delete m.sc;});sheet=null;renderSheet();break;}
+    case 'rk':S.rk=t.dataset.v;save();render();break;
+    case 'clrHist':
+      if(!histArm){histArm=1;render();setTimeout(()=>{if(histArm){histArm=0;render();}},4000);break;}
+      histArm=0;mut(()=>{S.hist={};S.nBuoi=0;});break;
     case 'extra':mut(()=>{S.extra++;});break;
     case 'ins':{const g=t.dataset.v;mut(()=>{insertType(g);});break;}
     case 'unpin':{const id=t.dataset.mid;mut(()=>{const m=S.plan.find(x=>x.id===id);if(m)m.pin=false;});if(sheet&&sheet.type==='mp')sheet=null;render();break;}
@@ -649,6 +772,10 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('input',e=>{
   if(e.target.id==='listText'){S.listText=e.target.value;save();$('preview').innerHTML=vPreview();}
+  if(e.target.dataset.sc&&sheet&&sheet.type==='sc'){const v=e.target.value.replace(/\D/g,'').slice(0,2);if(v!==e.target.value)e.target.value=v;sheet.v[+e.target.dataset.sc]=v;scSync();}
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.sc&&$('scSave')&&!$('scSave').disabled){e.preventDefault();$('scSave').click();}
 });
 setInterval(()=>{
   if(!S||S.phase!=='run')return;

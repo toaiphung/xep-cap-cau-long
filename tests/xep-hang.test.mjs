@@ -1,9 +1,9 @@
-﻿// Kiem phan tinh xep hang trong v2/index.html: chay `node --test` o thu muc du an
+﻿// Kiem phan tinh xep hang trong index.html: chay `node --test` o thu muc du an
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const html = readFileSync(new URL('../v2/index.html', import.meta.url), 'utf8');
+const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const code = html.slice(html.indexOf('//#xh-start'), html.indexOf('//#xh-end'));
 assert.ok(code.length > 20, 'khong thay khoi //#xh-start ... //#xh-end');
 const norm = s => s.normalize('NFC').toLowerCase().trim();
